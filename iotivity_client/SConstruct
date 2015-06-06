@@ -1,0 +1,36 @@
+#For Yocto builds, set OS=yocto as a command-line argument to scons once
+#the Yocto toolchain is installed and configured.
+
+#For Linux builds, set the following two variables:
+#Set OIC_RESOURCE_PATH to the root of oic-resource on Ubuntu.
+
+OIC_RESOURCE_PATH = '/home/developer/stacks/iotivity/iotivity-0.9.0'
+
+#Set OIC_LIBS_PATH to path on Ubuntu that contains liboc.so, liboctbstack.so,
+#liboc_logger.so and libcoap.so.
+
+OIC_LIBS_PATH = '/home/developer/stacks/iotivity/iotivity-0.9.0/out/linux/x86_64/release'
+
+env = DefaultEnvironment()
+target_os = ARGUMENTS.get("OS", "linux").lower()
+output_dir = env.GetLaunchDir() + "/out/" + target_os
+env.VariantDir(output_dir, env.GetLaunchDir(), duplicate=0)
+env.AppendUnique(CXXFLAGS = ['-std=c++0x', '-Wall'])
+env.AppendUnique(LINKFLAGS = ['-pthread'])
+env.AppendUnique(LIBS = ['oc', 'octbstack', 'oc_logger', 'coap'])
+env.Program(output_dir + '/IoTClient', [output_dir + '/IoTClient.cpp'])
+
+if target_os == "linux":
+    if OIC_RESOURCE_PATH == '' or OIC_LIBS_PATH == '':
+        print "ERROR Please set both OIC_RESOURCE_PATH and OIC_LIBS_PATH in SConstruct"
+        Exit(1)
+    env.AppendUnique(CPPPATH = [
+                OIC_RESOURCE_PATH + '/resource/include',
+                OIC_RESOURCE_PATH + '/resource/csdk/stack/include',
+                OIC_RESOURCE_PATH + '/resource/csdk/ocsocket/include',
+                OIC_RESOURCE_PATH + '/resource/oc_logger/include',
+                ])
+    env.AppendUnique(LIBPATH = [OIC_LIBS_PATH])
+else:
+    print "ERROR ", target_os, " is an unsupported target"
+    Exit(1)
